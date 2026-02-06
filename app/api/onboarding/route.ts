@@ -23,10 +23,11 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const fullName = String(body.fullName ?? "").trim();
-  const budgets = Array.isArray(body.budgets) ? body.budgets : [];
+  const budgets: { name?: string; percent?: string | number }[] =
+    Array.isArray(body.budgets) ? body.budgets : [];
 
-  const normalizedBudgets = budgets
-    .map((budget: { name?: string; percent?: string | number }) => ({
+  const normalizedBudgets: { name: string; percent: number }[] = budgets
+    .map((budget) => ({
       name: String(budget.name ?? "").trim(),
       percent: parseNumber(budget.percent ?? 0),
     }))

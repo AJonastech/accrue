@@ -22,7 +22,11 @@ export async function POST(request: Request) {
   const body = await request.json();
   const amount = parseNumber(body.amount ?? 0);
   const date = new Date(body.date ?? "");
-  const allocations = Array.isArray(body.allocations) ? body.allocations : [];
+  const allocations: {
+    name?: string;
+    percent?: string | number;
+    description?: string;
+  }[] = Array.isArray(body.allocations) ? body.allocations : [];
 
   if (!amount || amount <= 0) {
     return new Response("Amount must be greater than zero", { status: 400 });
@@ -32,8 +36,12 @@ export async function POST(request: Request) {
     return new Response("Invalid date", { status: 400 });
   }
 
-  const normalizedAllocations = allocations
-    .map((allocation: { name?: string; percent?: string | number; description?: string }) => ({
+  const normalizedAllocations: {
+    name: string;
+    percent: number;
+    description?: string;
+  }[] = allocations
+    .map((allocation) => ({
       name: String(allocation.name ?? "").trim(),
       percent: parseNumber(allocation.percent ?? 0),
       description: allocation.description ? String(allocation.description) : undefined,
