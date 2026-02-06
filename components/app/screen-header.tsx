@@ -19,7 +19,7 @@ export function ScreenHeader({
   return (
     <header
       className={cn(
-        "flex items-center justify-between gap-4",
+        "flex flex-col items-start justify-between gap-4 md:flex-row md:items-center",
         compact ? "py-2" : "py-6",
       )}
     >
