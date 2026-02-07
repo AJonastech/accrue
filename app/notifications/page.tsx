@@ -1,5 +1,3 @@
-import { Bell } from "lucide-react";
-
 import { DashboardShell } from "@/components/app/dashboard-shell";
 
 export default function NotificationsPage() {
@@ -7,26 +5,52 @@ export default function NotificationsPage() {
     <DashboardShell>
       <div className="flex flex-col gap-8">
         <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             Notifications
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            You&apos;re all caught up
           </h1>
           <p className="text-sm text-muted-foreground">
-            Check back later for updates and reminders.
+            All your alerts and reminders live here.
           </p>
         </header>
 
-        <section className="flex flex-col items-center justify-center gap-4 rounded-3xl bg-muted/10 px-6 py-12 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/40">
-            <Bell className="h-7 w-7 text-muted-foreground" />
+        <section className="flex flex-col items-center justify-center gap-5 px-6 py-12 text-center">
+          <div className="relative flex h-20 w-20 items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-primary/10" />
+            <div className="absolute inset-2 rounded-full border border-primary/20 bg-background/90" />
+            <div className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border border-background bg-primary/80" />
+            <svg
+              viewBox="0 0 24 24"
+              className="relative h-9 w-9"
+              fill="none"
+              stroke="url(#bellGradient)"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient
+                  id="bellGradient"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="hsl(var(--primary))" />
+                  <stop
+                    offset="100%"
+                    stopColor="hsl(var(--primary) / 0.7)"
+                  />
+                </linearGradient>
+              </defs>
+              <path d="M10 21h4" />
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            </svg>
           </div>
           <div className="space-y-2">
-            <p className="text-base font-semibold">You&apos;re up to date!</p>
+            <p className="text-base font-semibold">All clear for now</p>
             <p className="text-sm text-muted-foreground">
-              Nothing new right now. We&apos;ll notify you when something
-              changes.
+              We&apos;ll notify you when something needs your attention.
             </p>
           </div>
         </section>

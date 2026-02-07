@@ -34,11 +34,8 @@ export default async function IncomePage() {
       <DashboardShell>
         <div className="flex flex-col gap-8">
           <header className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
               Income
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-              Income entries
             </h1>
             <p className="text-sm text-muted-foreground">
               Track every deposit and its saved portion.
@@ -46,7 +43,7 @@ export default async function IncomePage() {
           </header>
           <section className="space-y-3">
             <div className="flex flex-row items-center justify-between">
-              <p className="text-base font-semibold">Recent Income</p>
+              <p className="text-base font-semibold">Entries</p>
               <Button size="sm" asChild>
                 <Link href="/add-income">
                   <Plus className="h-4 w-4" />
@@ -103,11 +100,8 @@ export default async function IncomePage() {
     <DashboardShell>
       <div className="flex flex-col gap-8">
         <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             Income
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            Income entries
           </h1>
           <p className="text-sm text-muted-foreground">
             Track every deposit and its saved portion.
@@ -116,7 +110,7 @@ export default async function IncomePage() {
 
         <section className="space-y-4">
           <div className="flex flex-row items-center justify-between">
-            <p className="text-base font-semibold">Income entries</p>
+            <p className="text-base font-semibold">Entries</p>
             <Button size="sm" asChild>
               <Link href="/add-income">
                 <Plus className="h-4 w-4" />

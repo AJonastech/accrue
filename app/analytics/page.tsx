@@ -5,11 +5,8 @@ export default function AnalyticsPage() {
     <DashboardShell>
       <div className="flex flex-col gap-8">
         <header className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             Analytics
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            Deeper charts & breakdowns
           </h1>
           <p className="text-sm text-muted-foreground">
             Expand on your income patterns and allocation trends.

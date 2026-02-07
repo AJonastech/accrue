@@ -151,15 +151,15 @@ export default function OnboardingPage() {
             <div className="flex flex-col items-center gap-10">
               <div className="w-full space-y-4">
                 <Label>Profile photo</Label>
-                <label className="group relative flex h-28 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-dashed border-border/60 bg-muted/10 px-4 text-sm text-muted-foreground transition-colors hover:border-border">
+                <label className="group relative flex h-40 w-full cursor-pointer items-center justify-center rounded-2xl border border-dashed border-border/60 bg-muted/10 text-sm text-muted-foreground transition-colors hover:border-border overflow-hidden">
                   {profilePreview ? (
                     <img
                       src={profilePreview}
                       alt="Profile preview"
-                      className="h-full w-full rounded-2xl object-cover"
+                      className="absolute inset-0 h-full w-full object-contain"
                     />
                   ) : (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 px-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border/60 bg-background text-xs text-muted-foreground">
                         JPG
                       </div>

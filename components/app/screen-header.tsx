@@ -16,24 +16,26 @@ export function ScreenHeader({
   rightSlot,
   compact,
 }: ScreenHeaderProps) {
+  const resolvedRightSlot =
+    rightSlot === undefined ? <CurrencyToggle size="sm" /> : rightSlot;
   return (
     <header
       className={cn(
-        "flex flex-col items-start justify-between gap-4 md:flex-row md:items-center",
-        compact ? "py-2" : "py-6",
+        "flex flex-col items-start justify-between gap-3 md:flex-row md:items-end",
+        compact ? "py-2" : "py-4 md:py-6",
       )}
     >
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {subtitle ?? "Save consistently. Watch it grow."}
-        </p>
+      <div className="space-y-1.5">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
           <span className="font-display">{title}</span>
         </h1>
+        {subtitle ? (
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        ) : null}
       </div>
-      <div className="flex items-center gap-2">
-        {rightSlot ?? <CurrencyToggle size="sm" />}
-      </div>
+      {resolvedRightSlot ? (
+        <div className="flex items-center gap-2">{resolvedRightSlot}</div>
+      ) : null}
     </header>
   );
 }

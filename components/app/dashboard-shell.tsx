@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { signOut } from "next-auth/react";
 import { Bell } from "lucide-react";
 
@@ -16,6 +16,58 @@ type DashboardShellProps = {
 };
 
 export function DashboardShell({ children, className }: DashboardShellProps) {
+  const [profile, setProfile] = useState<{
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const loadProfile = async () => {
+      try {
+        const response = await fetch("/api/me");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active) return;
+        setProfile(data.user ?? null);
+      } catch {
+        if (active) setProfile(null);
+      }
+    };
+    loadProfile();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleProfileUpdate = (event: Event) => {
+      const detail = (event as CustomEvent).detail as {
+        name?: string | null;
+        image?: string | null;
+      };
+      setProfile((prev) => ({
+        ...(prev ?? {}),
+        ...(detail ?? {}),
+      }));
+    };
+    window.addEventListener("profile:updated", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("profile:updated", handleProfileUpdate);
+    };
+  }, []);
+
+  const avatarSrc = useMemo(() => {
+    const image = profile?.image;
+    if (!image) return "/profile.jpg";
+    if (image.startsWith("http") || image.startsWith("data:")) return image;
+    const encoded = encodeURIComponent(image).replace(/%2F/g, "/");
+    return `/api/images/${encoded}`;
+  }, [profile?.image]);
+
+  const displayName = profile?.name ?? "Your account";
+
   return (
     <div className={cn("min-h-screen bg-background", className)}>
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-24 pt-6 md:flex-row md:gap-10 md:px-6 md:pb-16 md:pt-10">
@@ -24,17 +76,15 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
           <div className="w-full">
             <div className="mb-6 flex items-center justify-between md:hidden">
               <Link href="/settings" className="flex items-center gap-3">
-                <Image
-                  src="/profile.jpg"
+                <img
+                  src={avatarSrc}
                   alt="User avatar"
-                  width={40}
-                  height={40}
                   className="h-10 w-10 rounded-full border border-border/60 object-cover"
                 />
                 <div>
                   <p className="text-xs text-muted-foreground">Welcome back</p>
                   <p className="text-base font-semibold leading-none">
-                    Agu Jonas
+                    {displayName}
                   </p>
                 </div>
               </Link>
@@ -75,15 +125,13 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
                 >
                   <div className="text-right text-[11px] text-muted-foreground">
                     <p className="text-sm font-medium leading-none text-foreground">
-                      Agu Jonas
+                      {displayName}
                     </p>
                     <p className="leading-none">Account</p>
                   </div>
-                  <Image
-                    src="/profile.jpg"
+                  <img
+                    src={avatarSrc}
                     alt="User avatar"
-                    width={36}
-                    height={36}
                     className="h-9 w-9 rounded-full border border-border/60 object-cover"
                   />
                 </Link>

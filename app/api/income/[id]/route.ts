@@ -1,3 +1,4 @@
+import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -13,8 +14,8 @@ const parseNumber = (value: string | number) => {
 };
 
 export async function GET(
-  _request: Request,
-  { params }: { params: { id: string } },
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
 
@@ -22,8 +23,9 @@ export async function GET(
     return new Response("Unauthorized", { status: 401 });
   }
 
+  const { id } = await context.params;
   const income = await prisma.income.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
     include: {
       allocations: {
         select: {
@@ -53,8 +55,8 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } },
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions);
 
@@ -62,8 +64,9 @@ export async function PUT(
     return new Response("Unauthorized", { status: 401 });
   }
 
+  const { id } = await context.params;
   const existing = await prisma.income.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
     select: { id: true },
   });
 
@@ -74,7 +77,11 @@ export async function PUT(
   const body = await request.json();
   const amount = parseNumber(body.amount ?? 0);
   const date = new Date(body.date ?? "");
-  const allocations = Array.isArray(body.allocations) ? body.allocations : [];
+  const allocations: {
+    name?: string;
+    percent?: string | number;
+    description?: string;
+  }[] = Array.isArray(body.allocations) ? body.allocations : [];
 
   if (!amount || amount <= 0) {
     return new Response("Amount must be greater than zero", { status: 400 });
@@ -89,19 +96,13 @@ export async function PUT(
     percent: number;
     description?: string;
   }[] = allocations
-    .map(
-      (allocation: {
-        name?: string;
-        percent?: string | number;
-        description?: string;
-      }) => ({
-        name: String(allocation.name ?? "").trim(),
-        percent: parseNumber(allocation.percent ?? 0),
-        description: allocation.description
-          ? String(allocation.description)
-          : undefined,
-      }),
-    )
+    .map((allocation) => ({
+      name: String(allocation.name ?? "").trim(),
+      percent: parseNumber(allocation.percent ?? 0),
+      description: allocation.description
+        ? String(allocation.description)
+        : undefined,
+    }))
     .filter((allocation) => allocation.name.length > 0 && allocation.percent > 0);
 
   const totalPercent = normalizedAllocations.reduce(
@@ -117,15 +118,15 @@ export async function PUT(
 
   await prisma.$transaction([
     prisma.income.update({
-      where: { id: params.id },
+      where: { id },
       data: { amount, date },
     }),
     prisma.incomeAllocation.deleteMany({
-      where: { incomeId: params.id },
+      where: { incomeId: id },
     }),
     prisma.incomeAllocation.createMany({
       data: normalizedAllocations.map((allocation) => ({
-        incomeId: params.id,
+        incomeId: id,
         name: allocation.name,
         percent: allocation.percent,
         amount: (amount * allocation.percent) / 100,
