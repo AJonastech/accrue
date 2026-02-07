@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -325,28 +326,46 @@ export function IncomeForm({
         <Separator />
 
         <section className="space-y-6">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                Allocation breakdown
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Predefined allocations apply first. Adjust anytime.
-              </p>
+          <div className="space-y-2">
+            <p className="text-base font-semibold">Allocation breakdown</p>
+            <p className="text-sm text-muted-foreground">
+              Split this income into savings and budgets. Start with the required
+              items, then adjust the rest.
+            </p>
+          </div>
+
+          <div className="space-y-4 rounded-2xl border border-border/40 bg-muted/10 px-4 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  Total allocated
+                </p>
+                <p className="text-2xl font-semibold text-foreground">
+                  {totalPercent.toFixed(1)}%
+                </p>
+              </div>
+              <div className="text-right text-xs text-muted-foreground">
+                <p className="text-sm font-semibold text-foreground">
+                  {remainingPercent.toFixed(1)}% remaining
+                </p>
+                <p>
+                  {amountValue
+                    ? `${formatCurrency(
+                        (amountValue * remainingPercent) / 100,
+                      )} unallocated`
+                    : "Add an amount to see remaining value"}
+                </p>
+              </div>
             </div>
-            <div className="text-right text-xs text-muted-foreground">
-              <p className="text-sm font-semibold text-foreground">
-                {totalPercent.toFixed(1)}% allocated
+            <Progress
+              value={Math.min(totalPercent, 100)}
+              className={isOverAllocated ? "bg-destructive/15" : undefined}
+            />
+            {isOverAllocated ? (
+              <p className="text-xs text-destructive">
+                Allocation exceeds 100%. Reduce a budget before saving.
               </p>
-              <p>
-                {remainingPercent.toFixed(1)}% remaining
-                {amountValue
-                  ? ` • ${formatCurrency(
-                      (amountValue * remainingPercent) / 100,
-                    )} unallocated`
-                  : ""}
-              </p>
-            </div>
+            ) : null}
           </div>
 
           <div className="space-y-4">
@@ -539,13 +558,6 @@ export function IncomeForm({
               </div>
             )}
           </div>
-
-          {isOverAllocated ? (
-            <p className="text-sm text-destructive">
-              Allocations exceed 100% by {(totalPercent - 100).toFixed(1)}%. The
-              income cannot be saved until this is resolved.
-            </p>
-          ) : null}
 
           {submitError ? (
             <p className="text-sm text-destructive">{submitError}</p>

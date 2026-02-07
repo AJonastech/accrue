@@ -15,22 +15,36 @@ type DashboardShellProps = {
   className?: string;
 };
 
+type ProfileData = {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
+
+let cachedProfile: ProfileData | null = null;
+let cachedAt = 0;
+const PROFILE_CACHE_TTL = 5 * 60 * 1000;
+
 export function DashboardShell({ children, className }: DashboardShellProps) {
-  const [profile, setProfile] = useState<{
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  } | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(() => cachedProfile);
 
   useEffect(() => {
     let active = true;
     const loadProfile = async () => {
       try {
+        const now = Date.now();
+        if (cachedProfile && now - cachedAt < PROFILE_CACHE_TTL) {
+          setProfile(cachedProfile);
+          return;
+        }
         const response = await fetch("/api/me");
         if (!response.ok) return;
         const data = await response.json();
         if (!active) return;
-        setProfile(data.user ?? null);
+        const nextProfile = data.user ?? null;
+        cachedProfile = nextProfile;
+        cachedAt = Date.now();
+        setProfile(nextProfile);
       } catch {
         if (active) setProfile(null);
       }
@@ -47,10 +61,15 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
         name?: string | null;
         image?: string | null;
       };
-      setProfile((prev) => ({
-        ...(prev ?? {}),
-        ...(detail ?? {}),
-      }));
+      setProfile((prev) => {
+        const nextProfile = {
+          ...(prev ?? {}),
+          ...(detail ?? {}),
+        };
+        cachedProfile = nextProfile;
+        cachedAt = Date.now();
+        return nextProfile;
+      });
     };
     window.addEventListener("profile:updated", handleProfileUpdate);
     return () => {
@@ -60,13 +79,21 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
 
   const avatarSrc = useMemo(() => {
     const image = profile?.image;
-    if (!image) return "/profile.jpg";
+    if (!image) return null;
     if (image.startsWith("http") || image.startsWith("data:")) return image;
     const encoded = encodeURIComponent(image).replace(/%2F/g, "/");
     return `/api/images/${encoded}`;
   }, [profile?.image]);
 
   const displayName = profile?.name ?? "Your account";
+  const initials = useMemo(() => {
+    const name = profile?.name?.trim();
+    if (!name) return "";
+    const parts = name.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? parts[parts.length - 1]?.[0] ?? "" : "";
+    return `${first}${last}`.toUpperCase();
+  }, [profile?.name]);
 
   return (
     <div className={cn("min-h-screen bg-background", className)}>
@@ -76,11 +103,17 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
           <div className="w-full">
             <div className="mb-6 flex items-center justify-between md:hidden">
               <Link href="/settings" className="flex items-center gap-3">
-                <img
-                  src={avatarSrc}
-                  alt="User avatar"
-                  className="h-10 w-10 rounded-full border border-border/60 object-cover"
-                />
+                {avatarSrc ? (
+                  <img
+                    src={avatarSrc}
+                    alt="User avatar"
+                    className="h-10 w-10 rounded-full border border-border/60 object-cover"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-muted/20 text-xs font-semibold text-muted-foreground">
+                    {initials || "?"}
+                  </div>
+                )}
                 <div>
                   <p className="text-xs text-muted-foreground">Welcome back</p>
                   <p className="text-base font-semibold leading-none">
@@ -129,11 +162,17 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
                     </p>
                     <p className="leading-none">Account</p>
                   </div>
-                  <img
-                    src={avatarSrc}
-                    alt="User avatar"
-                    className="h-9 w-9 rounded-full border border-border/60 object-cover"
-                  />
+                  {avatarSrc ? (
+                    <img
+                      src={avatarSrc}
+                      alt="User avatar"
+                      className="h-9 w-9 rounded-full border border-border/60 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-muted/20 text-[10px] font-semibold text-muted-foreground">
+                      {initials || "?"}
+                    </div>
+                  )}
                 </Link>
               </div>
             </div>
