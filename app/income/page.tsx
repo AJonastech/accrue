@@ -126,7 +126,7 @@ export default async function IncomePage() {
           </p>
         </header>
 
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex flex-row items-center justify-between">
             <p className="text-base font-semibold">Entries</p>
             <Button size="sm" asChild>
