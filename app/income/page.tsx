@@ -4,36 +4,14 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { DashboardShell } from "@/components/app/dashboard-shell";
-import { IncomeList } from "@/components/app/income-list";
+import { IncomeFeed } from "@/components/app/income-feed";
 import { Button } from "@/components/ui/button";
+import { mapIncomeToEntry } from "@/lib/income";
 import { prisma } from "@/lib/prisma";
-
-type Currency = "USD" | "NGN";
 
 export const dynamic = "force-dynamic";
 
-const SAVINGS_BUDGET_NAME = "Savings / Investments";
-
-const currencyMeta: Record<Currency, { locale: string; code: string }> = {
-  USD: { locale: "en-US", code: "USD" },
-  NGN: { locale: "en-NG", code: "NGN" },
-};
-
-const formatCurrency = (value: number, currency: Currency) => {
-  const meta = currencyMeta[currency] ?? currencyMeta.USD;
-  return new Intl.NumberFormat(meta.locale, {
-    style: "currency",
-    currency: meta.code,
-    maximumFractionDigits: 2,
-  }).format(value);
-};
-
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
+const PAGE_SIZE = 20;
 
 export default async function IncomePage() {
   const session = await getServerSession(authOptions);
@@ -71,8 +49,8 @@ export default async function IncomePage() {
 
   const incomes = await prisma.income.findMany({
     where: { userId: session.user.id },
-    orderBy: { date: "desc" },
-    take: 20,
+    orderBy: [{ date: "desc" }, { id: "desc" }],
+    take: PAGE_SIZE + 1,
     select: {
       id: true,
       date: true,
@@ -88,31 +66,10 @@ export default async function IncomePage() {
     },
   });
 
-  const incomeEntries = incomes.map((income) => {
-    const currency =
-      income.currency?.toUpperCase() === "NGN" ? "NGN" : "USD";
-    const amountOriginal =
-      income.amountOriginal && income.amountOriginal > 0
-        ? income.amountOriginal
-        : income.amount ?? 0;
-    const savingsPercent = income.allocations.reduce((sum, allocation) => {
-      if (allocation.name.toLowerCase() !== SAVINGS_BUDGET_NAME.toLowerCase()) {
-        return sum;
-      }
-      return sum + (allocation.percent ?? 0);
-    }, 0);
-    const saved = (amountOriginal * savingsPercent) / 100;
-
-    return {
-      id: income.id,
-      date: income.date.toISOString(),
-      dateLabel: formatDate(income.date),
-      amount: amountOriginal,
-      amountLabel: formatCurrency(amountOriginal, currency),
-      saved,
-      savedLabel: formatCurrency(saved, currency),
-    };
-  });
+  const hasMore = incomes.length > PAGE_SIZE;
+  const slice = hasMore ? incomes.slice(0, PAGE_SIZE) : incomes;
+  const incomeEntries = slice.map((income) => mapIncomeToEntry(income));
+  const nextCursor = hasMore ? slice[slice.length - 1]?.id ?? null : null;
 
   return (
     <DashboardShell>
@@ -141,7 +98,10 @@ export default async function IncomePage() {
               No income entries yet. Add your first income to see it here.
             </p>
           ) : (
-            <IncomeList entries={incomeEntries} />
+            <IncomeFeed
+              initialEntries={incomeEntries}
+              initialCursor={nextCursor}
+            />
           )}
         </section>
       </div>

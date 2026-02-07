@@ -7,20 +7,12 @@ import { Pencil, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import type { IncomeEntry } from "@/lib/income";
 import { cn } from "@/lib/utils";
-
-type IncomeEntry = {
-  id: string;
-  date: string;
-  dateLabel: string;
-  amount: number;
-  amountLabel: string;
-  saved: number;
-  savedLabel: string;
-};
 
 type IncomeListProps = {
   entries: IncomeEntry[];
+  onDeleteEntry?: (id: string) => void;
 };
 
 const getMonthKey = (date: Date) =>
@@ -31,16 +23,24 @@ const getMonthLabel = (date: Date) =>
     date,
   );
 
-export function IncomeList({ entries }: IncomeListProps) {
+export function IncomeList({ entries, onDeleteEntry }: IncomeListProps) {
   const [items, setItems] = useState(entries);
   const [query, setQuery] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     setItems(entries);
   }, [entries]);
+
+  useEffect(() => {
+    if (!activeId) return;
+    if (!items.some((entry) => entry.id === activeId)) {
+      setActiveId(null);
+    }
+  }, [activeId, items]);
 
   const months = useMemo(() => {
     const map = new Map<string, string>();
@@ -80,6 +80,28 @@ export function IncomeList({ entries }: IncomeListProps) {
     });
   }, [items, query, selectedMonth]);
 
+  const grouped = useMemo(() => {
+    const groups = new Map<
+      string,
+      { label: string; entries: IncomeEntry[] }
+    >();
+
+    filtered.forEach((entry) => {
+      const date = new Date(entry.date);
+      const key = getMonthKey(date);
+      if (!groups.has(key)) {
+        groups.set(key, { label: getMonthLabel(date), entries: [] });
+      }
+      groups.get(key)?.entries.push(entry);
+    });
+
+    return Array.from(groups.entries()).map(([key, group]) => ({
+      key,
+      label: group.label,
+      entries: group.entries,
+    }));
+  }, [filtered]);
+
   const handleDelete = async (id: string) => {
     setDeleteError(null);
     setDeletingId(id);
@@ -93,6 +115,7 @@ export function IncomeList({ entries }: IncomeListProps) {
         return;
       }
       setItems((prev) => prev.filter((entry) => entry.id !== id));
+      onDeleteEntry?.(id);
     } catch (error) {
       setDeleteError("Unable to delete income entry.");
     } finally {
@@ -138,45 +161,65 @@ export function IncomeList({ entries }: IncomeListProps) {
           No income entries match your search or filter.
         </p>
       ) : (
-        <div className="divide-y divide-border/60">
-          <div className="hidden grid-cols-[1.6fr_1fr_1fr_auto] gap-4 pb-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground md:grid">
-            <span>Date</span>
-            <span className="text-right">Income</span>
-            <span className="text-right">Saved</span>
-            <span className="text-right">Edit</span>
+        <div className="space-y-5">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{filtered.length} entries</span>
+            <span>Newest first</span>
           </div>
-          {filtered.map((entry) => (
-            <div key={entry.id} className="py-2.5">
-              <MobileIncomeRow
-                entry={entry}
-                onDelete={handleDelete}
-                isDeleting={deletingId === entry.id}
-              />
+          {grouped.map((group) => (
+            <div key={group.key} className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                <span>{group.label}</span>
+                <span>{group.entries.length}</span>
+              </div>
+              <div className="divide-y divide-border/60">
+                <div className="hidden grid-cols-[1.6fr_1fr_1fr_auto] gap-4 pb-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground md:grid">
+                  <span>Date</span>
+                  <span className="text-right">Income</span>
+                  <span className="text-right">Saved</span>
+                  <span className="text-right">Edit</span>
+                </div>
+                {group.entries.map((entry) => (
+                  <div key={entry.id} className="py-2.5">
+                    <MobileIncomeRow
+                      entry={entry}
+                      onDelete={handleDelete}
+                      isDeleting={deletingId === entry.id}
+                      activeId={activeId}
+                      onActivate={setActiveId}
+                    />
 
-              <div className="hidden md:grid md:grid-cols-[1.6fr_1fr_1fr_auto] md:items-center md:gap-4">
-                <div>
-                  <p className="text-sm font-semibold">{entry.dateLabel}</p>
-                  <p className="text-xs text-muted-foreground">Income entry</p>
-                </div>
-                <div className="text-sm font-semibold text-right">
-                  {entry.amountLabel}
-                </div>
-                <div className="text-sm text-muted-foreground text-right">
-                  {entry.savedLabel}
-                </div>
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full border-primary/30 text-primary hover:bg-primary/10"
-                    asChild
-                  >
-                    <Link href={`/income/${entry.id}/edit`}>
-                      <Pencil className="h-4 w-4 md:mr-2" />
-                      <span className="hidden md:inline">Edit</span>
-                    </Link>
-                  </Button>
-                </div>
+                    <div className="hidden md:grid md:grid-cols-[1.6fr_1fr_1fr_auto] md:items-center md:gap-4">
+                      <div>
+                        <p className="text-sm font-semibold">
+                          {entry.dateLabel}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Income entry
+                        </p>
+                      </div>
+                      <div className="text-sm font-semibold text-right">
+                        {entry.amountLabel}
+                      </div>
+                      <div className="text-sm text-muted-foreground text-right">
+                        {entry.savedLabel}
+                      </div>
+                      <div className="flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full border-primary/30 text-primary hover:bg-primary/10"
+                          asChild
+                        >
+                          <Link href={`/income/${entry.id}/edit`}>
+                            <Pencil className="h-4 w-4 md:mr-2" />
+                            <span className="hidden md:inline">Edit</span>
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
@@ -193,20 +236,30 @@ type MobileIncomeRowProps = {
   entry: IncomeEntry;
   onDelete: (id: string) => void;
   isDeleting?: boolean;
+  activeId?: string | null;
+  onActivate?: (id: string | null) => void;
 };
 
 function MobileIncomeRow({
   entry,
   onDelete,
   isDeleting = false,
+  activeId,
+  onActivate,
 }: MobileIncomeRowProps) {
   const [offset, setOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startX = useRef(0);
   const startOffset = useRef(0);
 
+  useEffect(() => {
+    if (!activeId || activeId === entry.id || isDragging) return;
+    setOffset(0);
+  }, [activeId, entry.id, isDragging]);
+
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (isDeleting) return;
+    onActivate?.(entry.id);
     setIsDragging(true);
     startX.current = event.clientX;
     startOffset.current = offset;
@@ -225,14 +278,22 @@ function MobileIncomeRow({
     event.currentTarget.releasePointerCapture(event.pointerId);
     setIsDragging(false);
     const shouldOpen = offset < -56;
-    setOffset(shouldOpen ? -96 : 0);
+    if (shouldOpen) {
+      setOffset(-96);
+      onActivate?.(entry.id);
+    } else {
+      setOffset(0);
+      if (activeId === entry.id) {
+        onActivate?.(null);
+      }
+    }
   };
 
   const isReveal = offset < -8 || isDragging;
 
   return (
     <div className="md:hidden">
-      <div className="relative overflow-hidden rounded-xl border border-border/60 bg-background">
+      <div className="relative overflow-hidden bg-background">
         <div
           className={cn(
             "pointer-events-none absolute inset-y-0 right-0 flex items-center justify-end bg-destructive/10 px-3 opacity-0 transition-opacity duration-200",
@@ -260,18 +321,22 @@ function MobileIncomeRow({
           onPointerUp={handlePointerEnd}
           onPointerCancel={handlePointerEnd}
         >
-          <div className="space-y-0.5">
-            <p className="text-sm font-semibold leading-5">{entry.dateLabel}</p>
-            <p className="text-xs text-muted-foreground">Income entry</p>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <DateBadge date={entry.date} />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-5">
+                {entry.amountLabel}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Saved {entry.savedLabel}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <p className="text-sm font-semibold leading-5">{entry.amountLabel}</p>
-              <p className="text-xs text-muted-foreground leading-4">
-                Saved{" "}
-                <span className="font-medium text-foreground">
-                  {entry.savedLabel}
-                </span>
+              <p className="text-xs text-muted-foreground">Income</p>
+              <p className="text-xs text-muted-foreground">
+                {entry.dateLabel}
               </p>
             </div>
             <Button
@@ -287,6 +352,25 @@ function MobileIncomeRow({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DateBadge({ date }: { date: string }) {
+  const parsed = new Date(date);
+  const month = new Intl.DateTimeFormat("en-US", { month: "short" }).format(
+    parsed,
+  );
+  const day = parsed.getDate();
+
+  return (
+    <div className="flex h-12 w-12 flex-col items-center justify-center rounded-lg border border-border/60 bg-muted/20">
+      <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+        {month}
+      </span>
+      <span className="text-base font-semibold leading-5 text-foreground">
+        {day}
+      </span>
     </div>
   );
 }
