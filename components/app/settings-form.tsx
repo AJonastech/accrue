@@ -72,8 +72,9 @@ export function SettingsForm({ user, budgets }: SettingsFormProps) {
     user.preferredCurrency?.toUpperCase() === "NGN" ? "NGN" : "USD",
   );
   const [conversionRate, setConversionRate] = useState(
-    user.conversionRate ? String(user.conversionRate) : "1500",
+    user.conversionRate != null ? String(user.conversionRate) : "",
   );
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [budgetRows, setBudgetRows] = useState<BudgetRow[]>(
     budgets.length > 0
       ? budgets.map((budget) => ({
@@ -196,6 +197,33 @@ export function SettingsForm({ user, budgets }: SettingsFormProps) {
       setIsSaving(false);
     }
   };
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchRate = async () => {
+      setIsFetchingRate(true);
+      try {
+        const response = await fetch("/api/rates?base=usd&target=ngn");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active || typeof data?.rate !== "number") return;
+        setConversionRate(String(data.rate));
+      } catch (err) {
+        // Keep the last saved rate if live fetch fails.
+      } finally {
+        if (active) {
+          setIsFetchingRate(false);
+        }
+      }
+    };
+
+    fetchRate();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="flex flex-col gap-10">
@@ -335,7 +363,7 @@ export function SettingsForm({ user, budgets }: SettingsFormProps) {
         <div className="space-y-1">
           <p className="text-sm font-semibold">Currency Settings</p>
           <p className="text-sm text-muted-foreground">
-            Display currency only. No automatic exchange rates.
+            Live USD to NGN conversion rate.
           </p>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
@@ -353,15 +381,21 @@ export function SettingsForm({ user, budgets }: SettingsFormProps) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="rate">Conversion Rate</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Input
                 id="rate"
                 type="number"
                 inputMode="decimal"
                 value={conversionRate}
-                onChange={(event) => setConversionRate(event.target.value)}
+                placeholder={isFetchingRate ? "Updating..." : "—"}
+                readOnly
+                aria-readonly="true"
               />
-              <Badge variant="soft">1 USD = ₦</Badge>
+              {isFetchingRate ? (
+                <span className="text-xs text-muted-foreground">
+                  Updating…
+                </span>
+              ) : null}
             </div>
           </div>
         </div>

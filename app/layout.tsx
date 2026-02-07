@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   applicationName: "Accrue",
   keywords: ["personal finance", "budgeting", "savings", "income tracking"],
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/icon.ico",
+    apple: "/icon.ico",
   },
   openGraph: {
     title: "Accrue",
