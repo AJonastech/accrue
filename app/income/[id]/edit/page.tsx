@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { IncomeForm } from "@/components/app/income-form";
 import { prisma } from "@/lib/prisma";
+import type { Currency } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,8 @@ export default async function EditIncomePage({
     income.amountOriginal && income.amountOriginal > 0
       ? income.amountOriginal
       : income.amount ?? 0;
+  const incomeCurrency: Currency =
+    income.currency?.toUpperCase() === "NGN" ? "NGN" : "USD";
 
   return (
     <IncomeForm
@@ -57,7 +60,7 @@ export default async function EditIncomePage({
       initialData={{
         id: income.id,
         amount: amountForEdit,
-        currency: income.currency ?? "USD",
+        currency: incomeCurrency,
         date: income.date.toISOString(),
         allocations: income.allocations.map((allocation) => ({
           id: allocation.id,
