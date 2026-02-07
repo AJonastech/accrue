@@ -14,8 +14,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Accrue",
-  description: "Save consistently. Watch it grow.",
+  title: {
+    default: "Accrue",
+    template: "%s · Accrue",
+  },
+  description:
+    "Calm money tracking for income, budgets, and savings growth.",
+  applicationName: "Accrue",
+  keywords: ["personal finance", "budgeting", "savings", "income tracking"],
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+  openGraph: {
+    title: "Accrue",
+    description:
+      "Calm money tracking for income, budgets, and savings growth.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "Accrue",
+    description:
+      "Calm money tracking for income, budgets, and savings growth.",
+  },
 };
 
 export default function RootLayout({
