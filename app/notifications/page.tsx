@@ -1,7 +1,6 @@
 import { Bell } from "lucide-react";
 
 import { DashboardShell } from "@/components/app/dashboard-shell";
-import { Card } from "@/components/ui/card";
 
 export default function NotificationsPage() {
   return (
@@ -19,7 +18,7 @@ export default function NotificationsPage() {
           </p>
         </header>
 
-        <Card className="flex flex-col items-center justify-center gap-4 px-6 py-12 text-center">
+        <section className="flex flex-col items-center justify-center gap-4 rounded-3xl bg-muted/10 px-6 py-12 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/40">
             <Bell className="h-7 w-7 text-muted-foreground" />
           </div>
@@ -30,7 +29,7 @@ export default function NotificationsPage() {
               changes.
             </p>
           </div>
-        </Card>
+        </section>
       </div>
     </DashboardShell>
   );

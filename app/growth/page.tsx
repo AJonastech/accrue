@@ -2,7 +2,6 @@ import { CurrencyToggle } from "@/components/app/currency-toggle";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { ScreenShell } from "@/components/app/screen-shell";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 export default function GrowthPage() {
@@ -14,18 +13,18 @@ export default function GrowthPage() {
         rightSlot={<CurrencyToggle size="sm" />}
       />
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+      <section className="space-y-6">
+        <div className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-base">Growth Chart</CardTitle>
+            <p className="text-base font-semibold">Growth Chart</p>
             <p className="text-sm text-muted-foreground">
               No predictions, just progress.
             </p>
           </div>
           <Badge variant="soft">Y-axis in $</Badge>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="rounded-3xl bg-gradient-to-br from-muted/50 via-background to-accent/40 p-6">
+        </div>
+        <div className="space-y-6">
+          <div className="rounded-3xl bg-gradient-to-br from-muted/30 via-background to-muted/10 p-6">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>$5,000</span>
               <span>$2,500</span>
@@ -40,7 +39,7 @@ export default function GrowthPage() {
               <defs>
                 <linearGradient id="lineGradient" x1="0" x2="1" y1="0" y2="0">
                   <stop offset="0%" stopColor="hsl(var(--primary))" />
-                  <stop offset="100%" stopColor="hsl(var(--accent))" />
+                  <stop offset="100%" stopColor="hsl(var(--primary) / 0.7)" />
                 </linearGradient>
               </defs>
               <path
@@ -66,27 +65,27 @@ export default function GrowthPage() {
           </div>
           <Separator />
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl bg-muted/60 px-4 py-3">
+            <div className="rounded-2xl bg-muted/20 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 Current
               </p>
               <p className="text-xl font-semibold">$4,992</p>
             </div>
-            <div className="rounded-2xl bg-secondary/70 px-4 py-3">
+            <div className="rounded-2xl bg-muted/20 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 Best Month
               </p>
-              <p className="text-xl font-semibold">$1,920</p>
+              <p className="text-xl font-semibold text-primary">$1,920</p>
             </div>
-            <div className="rounded-2xl bg-accent/70 px-4 py-3">
+            <div className="rounded-2xl bg-muted/20 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                 Average
               </p>
               <p className="text-xl font-semibold">$1,661</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </ScreenShell>
   );
 }

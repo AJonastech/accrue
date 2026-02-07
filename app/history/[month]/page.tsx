@@ -4,7 +4,6 @@ import { CurrencyToggle } from "@/components/app/currency-toggle";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { ScreenShell } from "@/components/app/screen-shell";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
 const entries = [
@@ -28,43 +27,43 @@ export default function MonthDetailPage({
         rightSlot={<CurrencyToggle size="sm" />}
       />
 
-      <Card>
-        <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <section className="space-y-4">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle className="text-base">Totals</CardTitle>
+            <p className="text-base font-semibold">Totals</p>
             <p className="text-sm text-muted-foreground">
               Converted using your set rate.
             </p>
           </div>
           <Badge variant="soft">February 2026</Badge>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl bg-muted/60 px-4 py-3">
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl bg-muted/20 px-4 py-3">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Income
             </p>
             <p className="text-xl font-semibold">$2,160</p>
           </div>
-          <div className="rounded-2xl bg-accent/60 px-4 py-3">
+          <div className="rounded-2xl bg-muted/20 px-4 py-3">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Saved
             </p>
-            <p className="text-xl font-semibold">$1,728</p>
+            <p className="text-xl font-semibold text-primary">$1,728</p>
           </div>
-          <div className="rounded-2xl bg-secondary/70 px-4 py-3">
+          <div className="rounded-2xl bg-muted/20 px-4 py-3">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
               Cumulative
             </p>
             <p className="text-xl font-semibold">$4,992</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Income Entries</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Separator />
+
+      <section className="space-y-4">
+        <p className="text-base font-semibold">Income Entries</p>
+        <div className="space-y-4">
           {entries.map((entry, index) => (
             <div key={entry.date}>
               <div className="flex items-center justify-between">
@@ -82,8 +81,8 @@ export default function MonthDetailPage({
               {index < entries.length - 1 && <Separator className="mt-4" />}
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </ScreenShell>
   );
 }

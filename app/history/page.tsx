@@ -4,7 +4,6 @@ import { CurrencyToggle } from "@/components/app/currency-toggle";
 import { ScreenHeader } from "@/components/app/screen-header";
 import { ScreenShell } from "@/components/app/screen-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 const months = [
@@ -22,12 +21,15 @@ export default function HistoryPage() {
         rightSlot={<CurrencyToggle size="sm" />}
       />
 
-      <div className="grid gap-4">
+      <div className="space-y-6">
         {months.map((month) => (
-          <Card key={month.id}>
-            <CardHeader className="flex flex-row items-center justify-between">
+          <section
+            key={month.id}
+            className="space-y-3 border-b border-border/60 pb-6 last:border-b-0 last:pb-0"
+          >
+            <div className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-base">{month.label}</CardTitle>
+                <p className="text-base font-semibold">{month.label}</p>
                 <p className="text-sm text-muted-foreground">
                   Cumulative saved {month.total}
                 </p>
@@ -35,8 +37,8 @@ export default function HistoryPage() {
               <Button variant="outline" size="sm" asChild>
                 <Link href={`/history/${month.id}`}>View</Link>
               </Button>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            </div>
+            <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Income</span>
                 <span className="font-semibold">{month.income}</span>
@@ -46,8 +48,8 @@ export default function HistoryPage() {
                 <span className="font-semibold">{month.saved}</span>
               </div>
               <Progress value={month.progress} />
-            </CardContent>
-          </Card>
+            </div>
+          </section>
         ))}
       </div>
     </ScreenShell>

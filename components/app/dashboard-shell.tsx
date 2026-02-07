@@ -23,7 +23,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
         <main className="min-h-screen w-full flex-1 min-w-0">
           <div className="w-full">
             <div className="mb-6 flex items-center justify-between md:hidden">
-              <Link href="/account" className="flex items-center gap-3">
+              <Link href="/settings" className="flex items-center gap-3">
                 <Image
                   src="/profile.jpg"
                   alt="User avatar"
@@ -70,7 +70,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
                   Sign out
                 </Button>
                 <Link
-                  href="/account"
+                  href="/settings"
                   className="flex items-center gap-3 rounded-full border border-border/60 bg-muted/20 px-3 py-1.5"
                 >
                   <div className="text-right text-[11px] text-muted-foreground">

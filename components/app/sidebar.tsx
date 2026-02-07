@@ -47,10 +47,12 @@ export function Sidebar() {
         </div>
 
         <nav className="mt-6 flex flex-1 flex-col gap-2">
-          {navItems.map((item) => {
-            const isActive = pathname?.startsWith(item.href);
-            const Icon = item.icon;
-            return (
+        {navItems.map((item) => {
+          const isActive =
+            pathname?.startsWith(item.href) ||
+            (item.href === "/income" && pathname?.startsWith("/add-income"));
+          const Icon = item.icon;
+          return (
               <Link
                 key={item.href}
                 href={item.href}
@@ -87,7 +89,9 @@ export function Sidebar() {
       <nav className="fixed bottom-0 left-0 right-0 z-40 rounded-t-xl border-t border-border/40 bg-background/80 px-4 py-2 backdrop-blur-xl shadow-[0_-12px_30px_rgba(15,23,42,0.08)] md:hidden">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-2">
           {navItems.map((item) => {
-            const isActive = pathname?.startsWith(item.href);
+            const isActive =
+              pathname?.startsWith(item.href) ||
+              (item.href === "/income" && pathname?.startsWith("/add-income"));
             const Icon = item.icon;
             return (
               <Link

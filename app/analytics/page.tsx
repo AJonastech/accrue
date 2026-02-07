@@ -1,5 +1,4 @@
 import { DashboardShell } from "@/components/app/dashboard-shell";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AnalyticsPage() {
   return (
@@ -17,15 +16,13 @@ export default function AnalyticsPage() {
           </p>
         </header>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Analytics Overview</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
+        <section className="space-y-3">
+          <p className="text-sm font-semibold">Analytics Overview</p>
+          <p className="text-sm text-muted-foreground">
             Add charts here for category splits, monthly comparisons, and income
             cadence. This screen stays focused on deeper insights.
-          </CardContent>
-        </Card>
+          </p>
+        </section>
       </div>
     </DashboardShell>
   );

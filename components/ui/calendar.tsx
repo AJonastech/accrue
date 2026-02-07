@@ -22,36 +22,36 @@ function Calendar({
       classNames={{
         months: "flex flex-col gap-4",
         month: "space-y-4",
-        caption: "flex items-center justify-between px-2",
         month_caption: "flex items-center justify-between px-2",
         caption_label: "text-sm font-medium",
         nav: "flex items-center gap-1",
-        nav_button: cn(
+        button_previous: cn(
           buttonVariants({ variant: "ghost", size: "icon" }),
           "h-8 w-8 rounded-full hover:bg-muted/40",
         ),
-        nav_button_previous: "",
-        nav_button_next: "",
-        table: "w-full border-collapse",
-        head_row: "flex gap-2",
-        head_cell: "w-9 text-center text-[11px] font-medium text-muted-foreground",
-        weekdays: "flex gap-2",
-        weekday: "w-9 text-center text-[11px] font-medium text-muted-foreground",
-        row: "mt-2 flex w-full gap-2",
-        cell: "relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20",
-        day: cn(
+        button_next: cn(
+          buttonVariants({ variant: "ghost", size: "icon" }),
+          "h-8 w-8 rounded-full hover:bg-muted/40",
+        ),
+        month_grid: "w-full",
+        weekdays: "grid grid-cols-7 gap-2",
+        weekday: "text-center text-[11px] font-medium text-muted-foreground",
+        weeks: "mt-2 space-y-2",
+        week: "grid grid-cols-7 gap-2",
+        day: "h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20",
+        day_button: cn(
           buttonVariants({ variant: "ghost" }),
           "h-9 w-9 rounded-full p-0 font-normal hover:bg-muted/40 aria-selected:opacity-100",
         ),
-        day_range_end: "day-range-end",
-        day_selected:
+        range_end: "day-range-end",
+        selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
-        day_outside: "text-muted-foreground opacity-50",
-        day_disabled: "text-muted-foreground opacity-40",
-        day_range_middle:
+        today: "bg-accent text-accent-foreground",
+        outside: "text-muted-foreground opacity-50",
+        disabled: "text-muted-foreground opacity-40",
+        range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
-        day_hidden: "invisible",
+        hidden: "invisible",
         ...classNames,
       }}
       components={{
@@ -70,6 +70,7 @@ function Calendar({
           );
         },
       }}
+      weekStartsOn={0}
       {...props}
     />
   );
