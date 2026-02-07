@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Pencil, Search } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { Pencil, Search, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,12 +32,19 @@ const getMonthLabel = (date: Date) =>
   );
 
 export function IncomeList({ entries }: IncomeListProps) {
+  const [items, setItems] = useState(entries);
   const [query, setQuery] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(entries);
+  }, [entries]);
 
   const months = useMemo(() => {
     const map = new Map<string, string>();
-    entries.forEach((entry) => {
+    items.forEach((entry) => {
       const date = new Date(entry.date);
       const key = getMonthKey(date);
       if (!map.has(key)) {
@@ -52,11 +59,11 @@ export function IncomeList({ entries }: IncomeListProps) {
         label,
       })),
     ];
-  }, [entries]);
+  }, [items]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    return entries.filter((entry) => {
+    return items.filter((entry) => {
       const date = new Date(entry.date);
       const monthKey = getMonthKey(date);
       if (selectedMonth !== "all" && selectedMonth !== monthKey) {
@@ -71,7 +78,27 @@ export function IncomeList({ entries }: IncomeListProps) {
         entry.savedLabel,
       ].some((value) => value.toLowerCase().includes(normalized));
     });
-  }, [entries, query, selectedMonth]);
+  }, [items, query, selectedMonth]);
+
+  const handleDelete = async (id: string) => {
+    setDeleteError(null);
+    setDeletingId(id);
+    try {
+      const response = await fetch(`/api/income/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const message = await response.text();
+        setDeleteError(message || "Unable to delete income entry.");
+        return;
+      }
+      setItems((prev) => prev.filter((entry) => entry.id !== id));
+    } catch (error) {
+      setDeleteError("Unable to delete income entry.");
+    } finally {
+      setDeletingId((current) => (current === id ? null : current));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -120,33 +147,11 @@ export function IncomeList({ entries }: IncomeListProps) {
           </div>
           {filtered.map((entry) => (
             <div key={entry.id} className="py-4">
-              <div className="flex items-center justify-between gap-4 md:hidden">
-                <div className="space-y-1">
-                  <p className="text-sm font-semibold">{entry.dateLabel}</p>
-                  <p className="text-xs text-muted-foreground">Income entry</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-sm font-semibold">{entry.amountLabel}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Saved{" "}
-                      <span className="font-medium text-foreground">
-                        {entry.savedLabel}
-                      </span>
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 rounded-full border-primary/30 text-primary hover:bg-primary/10"
-                    asChild
-                  >
-                    <Link href={`/income/${entry.id}/edit`} aria-label="Edit">
-                      <Pencil className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+              <MobileIncomeRow
+                entry={entry}
+                onDelete={handleDelete}
+                isDeleting={deletingId === entry.id}
+              />
 
               <div className="hidden md:grid md:grid-cols-[1.6fr_1fr_1fr_auto] md:items-center md:gap-4">
                 <div>
@@ -177,6 +182,104 @@ export function IncomeList({ entries }: IncomeListProps) {
           ))}
         </div>
       )}
+      {deleteError ? (
+        <p className="text-sm text-destructive">{deleteError}</p>
+      ) : null}
+    </div>
+  );
+}
+
+type MobileIncomeRowProps = {
+  entry: IncomeEntry;
+  onDelete: (id: string) => void;
+  isDeleting?: boolean;
+};
+
+function MobileIncomeRow({
+  entry,
+  onDelete,
+  isDeleting = false,
+}: MobileIncomeRowProps) {
+  const [offset, setOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
+  const startOffset = useRef(0);
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (isDeleting) return;
+    setIsDragging(true);
+    startX.current = event.clientX;
+    startOffset.current = offset;
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const delta = event.clientX - startX.current;
+    const nextOffset = Math.min(0, Math.max(-96, startOffset.current + delta));
+    setOffset(nextOffset);
+  };
+
+  const handlePointerEnd = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+    setIsDragging(false);
+    const shouldOpen = offset < -56;
+    setOffset(shouldOpen ? -96 : 0);
+  };
+
+  return (
+    <div className="md:hidden">
+      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-background/80">
+        <div className="absolute inset-y-0 right-0 flex items-center justify-end bg-destructive/10 px-4">
+          <button
+            type="button"
+            onClick={() => onDelete(entry.id)}
+            disabled={isDeleting}
+            className="flex items-center gap-2 text-xs font-semibold text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+            {isDeleting ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+        <div
+          className={cn(
+            "relative flex touch-pan-y items-center justify-between gap-4 px-4 py-4 transition-transform",
+            isDragging ? "duration-0" : "duration-200",
+          )}
+          style={{ transform: `translateX(${offset}px)` }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerEnd}
+          onPointerCancel={handlePointerEnd}
+        >
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">{entry.dateLabel}</p>
+            <p className="text-xs text-muted-foreground">Income entry</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm font-semibold">{entry.amountLabel}</p>
+              <p className="text-xs text-muted-foreground">
+                Saved{" "}
+                <span className="font-medium text-foreground">
+                  {entry.savedLabel}
+                </span>
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-full border-primary/30 text-primary hover:bg-primary/10"
+              asChild
+            >
+              <Link href={`/income/${entry.id}/edit`} aria-label="Edit">
+                <Pencil className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

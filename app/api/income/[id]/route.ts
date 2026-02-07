@@ -13,6 +13,9 @@ const parseNumber = (value: string | number) => {
   return Math.max(0, parsed);
 };
 
+const normalizeCurrency = (value: string | undefined) =>
+  value?.toUpperCase() === "NGN" ? "NGN" : "USD";
+
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -47,6 +50,8 @@ export async function GET(
     JSON.stringify({
       id: income.id,
       amount: income.amount,
+      amountOriginal: income.amountOriginal,
+      currency: income.currency,
       date: income.date.toISOString(),
       allocations: income.allocations,
     }),
@@ -74,8 +79,25 @@ export async function PUT(
     return new Response("Not found", { status: 404 });
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { conversionRate: true },
+  });
+
+  if (!user) {
+    return new Response("Not found", { status: 404 });
+  }
+
   const body = await request.json();
-  const amount = parseNumber(body.amount ?? 0);
+  const amountOriginal = parseNumber(body.amount ?? 0);
+  const currency = normalizeCurrency(body.currency);
+  const conversionRate = Number(user.conversionRate ?? 0);
+  const amount =
+    currency === "USD"
+      ? amountOriginal
+      : conversionRate > 0
+        ? amountOriginal / conversionRate
+        : 0;
   const date = new Date(body.date ?? "");
   const allocations: {
     name?: string;
@@ -83,12 +105,16 @@ export async function PUT(
     description?: string;
   }[] = Array.isArray(body.allocations) ? body.allocations : [];
 
-  if (!amount || amount <= 0) {
+  if (!amountOriginal || amountOriginal <= 0) {
     return new Response("Amount must be greater than zero", { status: 400 });
   }
 
   if (Number.isNaN(date.getTime())) {
     return new Response("Invalid date", { status: 400 });
+  }
+
+  if (!amount || amount <= 0) {
+    return new Response("Invalid conversion rate", { status: 400 });
   }
 
   const normalizedAllocations: {
@@ -119,7 +145,7 @@ export async function PUT(
   await prisma.$transaction([
     prisma.income.update({
       where: { id },
-      data: { amount, date },
+      data: { amount, amountOriginal, currency, date },
     }),
     prisma.incomeAllocation.deleteMany({
       where: { incomeId: id },
@@ -134,6 +160,36 @@ export async function PUT(
       })),
     }),
   ]);
+
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const { id } = await context.params;
+  const existing = await prisma.income.findFirst({
+    where: { id, userId: session.user.id },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  await prisma.income.delete({
+    where: { id },
+  });
 
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,

@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import type { Currency } from "@/lib/format";
 
 const DEFAULT_ALLOCATIONS = [
   {
@@ -38,6 +39,7 @@ type AllocationRow = {
 type IncomeFormInitial = {
   id: string;
   amount: number;
+  currency?: Currency;
   date: string;
   allocations: {
     id?: string;
@@ -51,6 +53,7 @@ type IncomeFormProps = {
   mode?: "create" | "edit";
   initialData?: IncomeFormInitial;
   budgetNames?: string[];
+  conversionRate?: number;
 };
 
 const parseNumber = (value: string) => {
@@ -79,9 +82,13 @@ export function IncomeForm({
   mode = "create",
   initialData,
   budgetNames,
+  conversionRate = 1500,
 }: IncomeFormProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!initialData;
+  const [incomeCurrency, setIncomeCurrency] = useState<Currency>(
+    initialData?.currency ?? "USD",
+  );
   const [amountInput, setAmountInput] = useState(() =>
     isEditMode ? String(initialData.amount ?? "") : "",
   );
@@ -117,17 +124,17 @@ export function IncomeForm({
   const remainingPercent = Math.max(0, 100 - totalPercent);
   const isOverAllocated = totalPercent > 100;
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-US", {
+  const formatLocalCurrency = (value: number) =>
+    new Intl.NumberFormat(incomeCurrency === "NGN" ? "en-NG" : "en-US", {
       style: "currency",
-      currency: "USD",
+      currency: incomeCurrency,
       maximumFractionDigits: 2,
     }).format(value);
 
   const allocationAmount = (percent: number) => {
     if (!amountValue || amountValue <= 0) return "";
     const value = (amountValue * percent) / 100;
-    return value.toFixed(2);
+    return value.toFixed(2).replace(/\.00$/, "");
   };
 
   const updateAllocation = (id: string, patch: Partial<AllocationRow>) => {
@@ -223,6 +230,26 @@ export function IncomeForm({
     !isOverAllocated &&
     totalPercent > 0;
 
+  const convertAmount = (
+    value: number,
+    from: Currency,
+    to: Currency,
+  ) => {
+    if (from === to || conversionRate <= 0) return value;
+    return to === "NGN" ? value * conversionRate : value / conversionRate;
+  };
+
+  const handleCurrencyChange = (next: Currency) => {
+    if (next === incomeCurrency) return;
+    const currentValue = parseNumber(amountInput);
+    if (currentValue != null) {
+      const converted = convertAmount(currentValue, incomeCurrency, next);
+      const formatted = converted.toFixed(2).replace(/\.00$/, "");
+      setAmountInput(formatted);
+    }
+    setIncomeCurrency(next);
+  };
+
   const handleSave = async () => {
     if (!canSubmit || !date || !amountValue) return;
     setSubmitError(null);
@@ -237,6 +264,7 @@ export function IncomeForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: amountValue,
+          currency: incomeCurrency,
           date: date.toISOString(),
           allocations: allocations.map((row) => ({
             name: row.name,
@@ -268,7 +296,13 @@ export function IncomeForm({
           subtitle={
             isEditMode ? "Update income details." : "Capture income quickly."
           }
-          rightSlot={<CurrencyToggle size="sm" />}
+          rightSlot={
+            <CurrencyToggle
+              size="sm"
+              value={incomeCurrency}
+              onValueChange={handleCurrencyChange}
+            />
+          }
         />
 
         <section className="space-y-6">
@@ -285,7 +319,7 @@ export function IncomeForm({
               <Label htmlFor="income-amount">Amount</Label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  $
+                  {incomeCurrency === "NGN" ? "₦" : "$"}
                 </span>
                 <Input
                   id="income-amount"
@@ -350,7 +384,7 @@ export function IncomeForm({
                 </p>
                 <p>
                   {amountValue
-                    ? `${formatCurrency(
+                    ? `${formatLocalCurrency(
                         (amountValue * remainingPercent) / 100,
                       )} unallocated`
                     : "Add an amount to see remaining value"}
@@ -419,7 +453,7 @@ export function IncomeForm({
                     </Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                        $
+                        {incomeCurrency === "NGN" ? "₦" : "$"}
                       </span>
                       <Input
                         type="text"
@@ -524,7 +558,7 @@ export function IncomeForm({
                         </Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                            $
+                            {incomeCurrency === "NGN" ? "₦" : "$"}
                           </span>
                           <Input
                             type="text"

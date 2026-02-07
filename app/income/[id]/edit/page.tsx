@@ -18,7 +18,7 @@ export default async function EditIncomePage({
     redirect("/sign-in");
   }
 
-  const [income, budgets] = await Promise.all([
+  const [income, budgets, user] = await Promise.all([
     prisma.income.findFirst({
       where: { id: params.id, userId: session.user.id },
       include: {
@@ -36,18 +36,28 @@ export default async function EditIncomePage({
       where: { userId: session.user.id },
       select: { name: true },
     }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { conversionRate: true },
+    }),
   ]);
 
   if (!income) {
     notFound();
   }
 
+  const amountForEdit =
+    income.amountOriginal && income.amountOriginal > 0
+      ? income.amountOriginal
+      : income.amount ?? 0;
+
   return (
     <IncomeForm
       mode="edit"
       initialData={{
         id: income.id,
-        amount: income.amount ?? 0,
+        amount: amountForEdit,
+        currency: income.currency ?? "USD",
         date: income.date.toISOString(),
         allocations: income.allocations.map((allocation) => ({
           id: allocation.id,
@@ -56,6 +66,7 @@ export default async function EditIncomePage({
           description: allocation.description ?? "",
         })),
       }}
+      conversionRate={user?.conversionRate ?? 1500}
       budgetNames={budgets.map((budget) => budget.name)}
     />
   );

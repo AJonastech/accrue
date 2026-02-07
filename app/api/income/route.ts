@@ -12,6 +12,9 @@ const parseNumber = (value: string | number) => {
   return Math.max(0, parsed);
 };
 
+const normalizeCurrency = (value: string | undefined) =>
+  value?.toUpperCase() === "NGN" ? "NGN" : "USD";
+
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
 
@@ -19,8 +22,25 @@ export async function POST(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { conversionRate: true },
+  });
+
+  if (!user) {
+    return new Response("Not found", { status: 404 });
+  }
+
   const body = await request.json();
-  const amount = parseNumber(body.amount ?? 0);
+  const amountOriginal = parseNumber(body.amount ?? 0);
+  const currency = normalizeCurrency(body.currency);
+  const conversionRate = Number(user.conversionRate ?? 0);
+  const amount =
+    currency === "USD"
+      ? amountOriginal
+      : conversionRate > 0
+        ? amountOriginal / conversionRate
+        : 0;
   const date = new Date(body.date ?? "");
   const allocations: {
     name?: string;
@@ -28,12 +48,16 @@ export async function POST(request: Request) {
     description?: string;
   }[] = Array.isArray(body.allocations) ? body.allocations : [];
 
-  if (!amount || amount <= 0) {
+  if (!amountOriginal || amountOriginal <= 0) {
     return new Response("Amount must be greater than zero", { status: 400 });
   }
 
   if (Number.isNaN(date.getTime())) {
     return new Response("Invalid date", { status: 400 });
+  }
+
+  if (!amount || amount <= 0) {
+    return new Response("Invalid conversion rate", { status: 400 });
   }
 
   const normalizedAllocations: {
@@ -63,6 +87,8 @@ export async function POST(request: Request) {
     data: {
       userId: session.user.id,
       amount,
+      amountOriginal,
+      currency,
       date,
       allocations: {
         create: normalizedAllocations.map((allocation) => ({

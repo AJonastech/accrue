@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Income" ADD COLUMN     "amountOriginal" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "currency" TEXT NOT NULL DEFAULT 'USD';

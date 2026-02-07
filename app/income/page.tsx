@@ -8,16 +8,25 @@ import { IncomeList } from "@/components/app/income-list";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 
+type Currency = "USD" | "NGN";
+
 export const dynamic = "force-dynamic";
 
 const SAVINGS_BUDGET_NAME = "Savings / Investments";
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
+const currencyMeta: Record<Currency, { locale: string; code: string }> = {
+  USD: { locale: "en-US", code: "USD" },
+  NGN: { locale: "en-NG", code: "NGN" },
+};
+
+const formatCurrency = (value: number, currency: Currency) => {
+  const meta = currencyMeta[currency] ?? currencyMeta.USD;
+  return new Intl.NumberFormat(meta.locale, {
     style: "currency",
-    currency: "USD",
+    currency: meta.code,
     maximumFractionDigits: 2,
   }).format(value);
+};
 
 const formatDate = (date: Date) =>
   new Intl.DateTimeFormat("en-US", {
@@ -68,31 +77,40 @@ export default async function IncomePage() {
       id: true,
       date: true,
       amount: true,
+      amountOriginal: true,
+      currency: true,
       allocations: {
         select: {
           name: true,
-          amount: true,
+          percent: true,
         },
       },
     },
   });
 
   const incomeEntries = incomes.map((income) => {
-    const saved = income.allocations.reduce((sum, allocation) => {
+    const currency =
+      income.currency?.toUpperCase() === "NGN" ? "NGN" : "USD";
+    const amountOriginal =
+      income.amountOriginal && income.amountOriginal > 0
+        ? income.amountOriginal
+        : income.amount ?? 0;
+    const savingsPercent = income.allocations.reduce((sum, allocation) => {
       if (allocation.name.toLowerCase() !== SAVINGS_BUDGET_NAME.toLowerCase()) {
         return sum;
       }
-      return sum + (allocation.amount ?? 0);
+      return sum + (allocation.percent ?? 0);
     }, 0);
+    const saved = (amountOriginal * savingsPercent) / 100;
 
     return {
       id: income.id,
       date: income.date.toISOString(),
       dateLabel: formatDate(income.date),
-      amount: income.amount ?? 0,
-      amountLabel: formatCurrency(income.amount ?? 0),
+      amount: amountOriginal,
+      amountLabel: formatCurrency(amountOriginal, currency),
       saved,
-      savedLabel: formatCurrency(saved),
+      savedLabel: formatCurrency(saved, currency),
     };
   });
 
